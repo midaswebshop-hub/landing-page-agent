@@ -15,7 +15,7 @@ import { createClient } from "@supabase/supabase-js";
 import { listProducts } from "../../lib/shopify";
 import { buildLandingHTML_v4 as buildLandingHTML } from "../../lib/landing_html_v4";
 import { analyzeUrl } from "../../lib/scraper";
-import { extractDropiProductFromUrl } from "../../lib/dropi_v2";
+import { extractDropiProductFromUrl } from "../../lib/dropi_v3";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
