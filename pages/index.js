@@ -227,7 +227,7 @@ export default function Dashboard() {
             <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg,#10B981,#059669)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 20, boxShadow: "0 4px 12px rgba(16,185,129,.3)" }}>L</div>
             <div>
               <div style={{ fontWeight: 800, fontSize: 16, color: "#F8FAFC", letterSpacing: "-.02em" }}>Landing Agent</div>
-              <div style={{ fontSize: 10, color: "#10B981", fontWeight: 700, letterSpacing: ".05em" }}>PRO v2</div>
+              <div style={{ fontSize: 10, color: "#10B981", fontWeight: 700, letterSpacing: ".05em" }}>PRO v3</div>
             </div>
           </div>
 
@@ -439,39 +439,144 @@ export default function Dashboard() {
               <>
                 <div className="au" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
                   <div>
-                    <h1 style={{ fontSize: 28, fontWeight: 800, color: "#F8FAFC", letterSpacing: "-.03em" }}>Panel</h1>
-                    <p style={{ fontSize: 14, color: "#475569", marginTop: 4 }}>Estado del sistema</p>
+                    <h1 style={{ fontSize: 28, fontWeight: 800, color: "#F8FAFC", letterSpacing: "-.03em" }}>Panel de Control</h1>
+                    <p style={{ fontSize: 14, color: "#475569", marginTop: 4 }}>Metricas y estado del sistema</p>
                   </div>
-                  <button style={{ ...S.btn, fontSize: 13, opacity: autoCreating ? 0.5 : 1 }} onClick={autoCreate} disabled={autoCreating}>{autoCreating ? "Creando..." : "Auto-crear"}</button>
+                  <button style={{ ...S.btn, fontSize: 13, opacity: autoCreating ? 0.5 : 1 }} onClick={autoCreate} disabled={autoCreating}>{autoCreating ? "Creando..." : "Auto-crear desde Score 8+"}</button>
                 </div>
 
-                <div className="au au1" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 24 }}>
-                  {[["Total", stats?.total || 0, "#3B82F6"], ["Publicadas", stats?.published || 0, "#10B981"], ["Borradores", stats?.drafts || 0, "#F59E0B"], ["Hoy", stats?.last24h || 0, "#8B5CF6"]].map(([l, v, c]) => (
-                    <div key={l} style={{ ...S.card, textAlign: "center", padding: 20 }}>
-                      <div style={{ fontSize: 32, fontWeight: 800, color: c, lineHeight: 1 }}>{v}</div>
-                      <div style={{ fontSize: 11, color: "#475569", marginTop: 6, textTransform: "uppercase", letterSpacing: "1px" }}>{l}</div>
+                {/* KPIs principales */}
+                <div className="au au1" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 20 }}>
+                  {[
+                    ["Total Landings", stats?.total || 0, "#3B82F6", "Todas las creadas"],
+                    ["Publicadas", stats?.published || 0, "#10B981", "Activas en Shopify"],
+                    ["Borradores", stats?.drafts || 0, "#F59E0B", "Pendientes de publicar"],
+                    ["Hoy", stats?.last24h || 0, "#8B5CF6", "Ultimas 24 horas"],
+                  ].map(([l, v, c, sub]) => (
+                    <div key={l} style={{ ...S.card, textAlign: "center", padding: 20, position: "relative", overflow: "hidden" }}>
+                      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: c, opacity: 0.6 }} />
+                      <div style={{ fontSize: 36, fontWeight: 900, color: c, lineHeight: 1 }}>{v}</div>
+                      <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 6, fontWeight: 700 }}>{l}</div>
+                      <div style={{ fontSize: 10, color: "#475569", marginTop: 2 }}>{sub}</div>
                     </div>
                   ))}
                 </div>
 
-                <div className="au au2" style={S.card}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: "#F8FAFC", marginBottom: 14 }}>Recientes</div>
-                  {(stats?.recent || []).slice(0, 6).map(l => {
+                {/* Tasa de conversion estimada + Ratio publicacion */}
+                <div className="au au2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+                  <div style={S.card}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: "#F8FAFC", marginBottom: 14 }}>Ratio de Publicacion</div>
+                    {(() => {
+                      const total = stats?.total || 0;
+                      const pub = stats?.published || 0;
+                      const pct = total > 0 ? Math.round((pub / total) * 100) : 0;
+                      return (
+                        <>
+                          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
+                            <span style={{ fontSize: 42, fontWeight: 900, color: pct >= 50 ? "#10B981" : "#F59E0B", lineHeight: 1 }}>{pct}%</span>
+                            <span style={{ fontSize: 13, color: "#475569" }}>publicadas</span>
+                          </div>
+                          <div style={{ height: 8, background: "rgba(255,255,255,.06)", borderRadius: 4, overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 50 ? "linear-gradient(90deg,#10B981,#059669)" : "linear-gradient(90deg,#F59E0B,#EAB308)", borderRadius: 4, transition: "width 1s" }} />
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11, color: "#475569" }}>
+                            <span>{pub} publicadas</span>
+                            <span>{total - pub} pendientes</span>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  <div style={S.card}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: "#F8FAFC", marginBottom: 14 }}>Paises Cubiertos</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {(() => {
+                        const countries = {};
+                        (stats?.recent || []).forEach(l => {
+                          try {
+                            const d = JSON.parse(l.landing_data || "{}");
+                            if (d.country_code) {
+                              const c = C.find(x => x.c === d.country_code);
+                              if (c) countries[c.c] = (countries[c.c] || 0) + 1;
+                            }
+                          } catch {}
+                        });
+                        const entries = Object.entries(countries);
+                        if (entries.length === 0) return <span style={{ color: "#475569", fontSize: 13 }}>Sin datos de paises aun</span>;
+                        return entries.sort((a, b) => b[1] - a[1]).map(([code, count]) => {
+                          const c = C.find(x => x.c === code);
+                          return (
+                            <div key={code} style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
+                              <div style={{ fontSize: 20 }}>{c?.f}</div>
+                              <div style={{ fontSize: 11, color: "#94A3B8", fontWeight: 700 }}>{count}</div>
+                              <div style={{ fontSize: 9, color: "#475569" }}>{c?.n}</div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Estado del sistema */}
+                <div className="au au3" style={{ ...S.card, marginBottom: 20 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#F8FAFC", marginBottom: 16 }}>Estado del Sistema</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10 }}>
+                    {[
+                      ["Gemini AI", "Activo", true, "Generacion de copy"],
+                      ["Shopify", shopifyOk?.ok ? "Conectado" : "Verificando...", shopifyOk?.ok, "Publicacion automatica"],
+                      ["Webhook", "Score >= 9", true, "Auto-crear landings"],
+                      ["HTML", "v3 PRO", true, "Galeria + animaciones"],
+                    ].map(([name, status, ok, desc]) => (
+                      <div key={name} style={{ background: "rgba(255,255,255,.02)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 10, padding: 14, textAlign: "center" }}>
+                        <div style={{ width: 10, height: 10, borderRadius: 5, background: ok ? "#10B981" : "#F59E0B", margin: "0 auto 8px", boxShadow: ok ? "0 0 10px rgba(16,185,129,.4)" : "0 0 10px rgba(245,158,11,.4)" }} />
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#E2E8F0" }}>{name}</div>
+                        <div style={{ fontSize: 11, color: ok ? "#10B981" : "#F59E0B", fontWeight: 600, marginTop: 2 }}>{status}</div>
+                        <div style={{ fontSize: 10, color: "#475569", marginTop: 4 }}>{desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Actividad reciente mejorada */}
+                <div className="au au4" style={S.card}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: "#F8FAFC" }}>Actividad Reciente</div>
+                    <span style={{ fontSize: 11, color: "#475569", background: "rgba(255,255,255,.04)", padding: "3px 10px", borderRadius: 6 }}>{(stats?.recent || []).length} registros</span>
+                  </div>
+                  {(stats?.recent || []).slice(0, 8).map((l, idx) => {
                     const d = pl(l);
+                    const countryInfo = d.country_code ? C.find(c => c.c === d.country_code) : null;
                     return (
-                      <div key={l.id} style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,.06)", alignItems: "center" }}>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: 14, color: "#E2E8F0" }}>{l.product_name}</div>
-                          <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{new Date(l.created_at).toLocaleDateString("es-CO")} {d.formatted_price || ""}</div>
+                      <div key={l.id} style={{ display: "flex", justifyContent: "space-between", padding: "14px 0", borderBottom: idx < 7 ? "1px solid rgba(255,255,255,.04)" : "none", alignItems: "center" }}>
+                        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                          <div style={{ width: 36, height: 36, borderRadius: 10, background: l.status === "publicado" ? "rgba(16,185,129,.1)" : "rgba(245,158,11,.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+                            {countryInfo?.f || "📦"}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: 14, color: "#E2E8F0" }}>{l.product_name}</div>
+                            <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
+                              {new Date(l.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                              {d.formatted_price ? ` · ${d.formatted_price}` : ""}
+                              {countryInfo ? ` · ${countryInfo.n}` : ""}
+                            </div>
+                          </div>
                         </div>
                         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                           <button onClick={() => setPreviewId(l.id)} style={S.sm}>Preview</button>
-                          <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 6, fontWeight: 700, background: l.status === "publicado" ? "rgba(16,185,129,.15)" : "rgba(245,158,11,.15)", color: l.status === "publicado" ? "#6EE7B7" : "#FCD34D" }}>{l.status}</span>
+                          {l.shopify_url && <a href={l.shopify_url} target="_blank" rel="noreferrer" style={{ ...S.sm, textDecoration: "none", borderColor: "rgba(59,130,246,.3)", color: "#3B82F6" }}>Tienda</a>}
+                          <span style={{ fontSize: 10, padding: "4px 10px", borderRadius: 8, fontWeight: 700, background: l.status === "publicado" ? "rgba(16,185,129,.12)" : "rgba(245,158,11,.12)", color: l.status === "publicado" ? "#6EE7B7" : "#FCD34D" }}>{l.status}</span>
                         </div>
                       </div>
                     );
                   })}
-                  {(!stats?.recent || stats.recent.length === 0) && <p style={{ color: "#334155", textAlign: "center", padding: 24 }}>Sin landings aun</p>}
+                  {(!stats?.recent || stats.recent.length === 0) && (
+                    <div style={{ textAlign: "center", padding: 40 }}>
+                      <div style={{ fontSize: 32, marginBottom: 8, opacity: 0.3 }}>📊</div>
+                      <p style={{ color: "#334155", fontSize: 14 }}>Sin landings aun. Crea tu primera landing para ver estadisticas.</p>
+                    </div>
+                  )}
                 </div>
               </>
             )}
