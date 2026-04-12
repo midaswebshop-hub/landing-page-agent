@@ -1,0 +1,6 @@
+node_modules/
+.next/
+.env.local
+.DS_Store
+CONTEXTO-SESION-2026-04-11.md
+CONTEXTO-LANDING-AGENT.md
