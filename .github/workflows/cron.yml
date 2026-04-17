@@ -31,14 +31,20 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - name: Despertar servidor Render (cold start)
+      - name: Despertar servidor Render (cold start ~30-60s)
         run: |
           echo "🔄 Despertando Landing Agent..."
-          curl -s -o /dev/null -w "%{http_code}" \
-            "${{ secrets.APP_URL }}/api/landing?action=status" \
-            --max-time 60 || true
-          echo ""
-          echo "✅ Servidor despierto"
+          for i in 1 2 3; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              "${{ secrets.APP_URL }}/api/landing?action=status" \
+              --max-time 90) || true
+            echo "Intento $i: HTTP $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Servidor despierto"
+              break
+            fi
+            sleep 10
+          done
 
       - name: Crear landings automáticas
         run: |
