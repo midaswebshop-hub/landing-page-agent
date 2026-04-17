@@ -1,0 +1,83 @@
+# .github/workflows/cron.yml
+# ============================================================
+# CRON — Auto-crear landings desde winning products cada 6 horas
+# Busca productos score >= 8 sin landing y genera automáticamente
+# ============================================================
+# Secrets necesarios en GitHub → Settings → Secrets:
+#    - APP_URL: https://landing-page-agent-m2z7.onrender.com
+#    - CRON_SECRET: webshop.409
+#    - TELEGRAM_BOT_TOKEN: token del bot
+#    - TELEGRAM_CHAT_ID: chat ID personal
+# ============================================================
+
+name: Landing Agent — Auto-crear Landings 6h
+
+on:
+  schedule:
+    # Cada 6 horas (30 min después del dropshipping para dar tiempo)
+    - cron: "30 0,6,12,18 * * *"
+
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Razón de la ejecución manual"
+        required: false
+        default: "Ejecución manual desde GitHub"
+
+jobs:
+  auto-create-landings:
+    name: Crear landings desde productos ganadores
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Despertar servidor Render (cold start)
+        run: |
+          echo "🔄 Despertando Landing Agent..."
+          curl -s -o /dev/null -w "%{http_code}" \
+            "${{ secrets.APP_URL }}/api/landing?action=status" \
+            --max-time 60 || true
+          echo ""
+          echo "✅ Servidor despierto"
+
+      - name: Crear landings automáticas
+        run: |
+          echo "🏗️ Creando landings desde winning products: $(date)"
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron" \
+            --max-time 300)
+
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+
+          echo "Status HTTP: $HTTP_STATUS"
+          echo "Respuesta: $BODY"
+
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "❌ Error: landing agent respondió con status $HTTP_STATUS"
+            exit 1
+          fi
+
+          echo "✅ Landings procesadas"
+          echo "$BODY" | python3 -c "
+          import json, sys
+          try:
+            d = json.load(sys.stdin)
+            print(f'Landings creadas: {d.get(\"created\", 0)}')
+          except:
+            pass
+          "
+
+      - name: Notificar fallo en Telegram
+        if: failure()
+        run: |
+          if [ -n "${{ secrets.TELEGRAM_BOT_TOKEN }}" ]; then
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+              -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+              -d "text=⚠️ Landing Agent: el cron auto-crear landings falló. Revisa GitHub Actions." \
+              -d "parse_mode=Markdown"
+          fi
