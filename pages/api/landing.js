@@ -13,7 +13,7 @@ import {
 } from "../../lib/agent";
 import { createClient } from "@supabase/supabase-js";
 import { listProducts } from "../../lib/shopify";
-import { buildLandingHTML_v5 as buildLandingHTML } from "../../lib/landing_html_v5";
+import { buildLandingHTML_v6 as buildLandingHTML } from "../../lib/landing_html_v6";
 import { analyzeUrl } from "../../lib/scraper";
 import { extractDropiProductFromUrl } from "../../lib/dropi_v3";
 
