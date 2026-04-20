@@ -260,8 +260,11 @@ export default async function handler(req, res) {
             source: "dropi",
           };
         } else {
-          // Fallback: usar el slug de la URL como nombre
-          const slug = url.match(/product-details\/\d+\/(.+)/)?.[1]?.replace(/-/g, " ") || "Producto";
+          // Fallback: extraer nombre del slug de la URL
+          const slug = url.match(/product-details\/\d+\/(.+)/)?.[1]?.replace(/-/g, " ")
+            || url.match(/product\/([^/?]+)/)?.[1]?.replace(/-/g, " ")
+            || url.match(/search\/([^/?]+)/)?.[1]?.replace(/-/g, " ")
+            || "Producto";
           d = { title: slug, description: "", images: [], price: null, features: [], source: "dropi" };
         }
       } else {
