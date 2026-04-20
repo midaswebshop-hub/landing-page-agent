@@ -16,6 +16,7 @@ import { listProducts } from "../../lib/shopify";
 import { buildLandingHTML_v6 as buildLandingHTML } from "../../lib/landing_html_v6";
 import { analyzeUrl } from "../../lib/scraper";
 import { extractDropiProductFromUrl } from "../../lib/dropi_v3";
+import { spyCompetitors } from "../../lib/spy";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -354,6 +355,33 @@ export default async function handler(req, res) {
       });
 
       return res.status(result.ok ? 200 : 500).json(result);
+    }
+  }
+
+  // ─── SPY COMPETIDORES ─────────────────────────────────────
+  if (action === "spy" && req.method === "POST") {
+    const { query, country } = req.body;
+    if (!query) return res.status(400).json({ error: "Falta query (nombre del producto)" });
+    try {
+      const result = await spyCompetitors(query, { country: country || "ALL", maxResults: 8 });
+      return res.json(result);
+    } catch (err) {
+      return res.status(500).json({ ok: false, error: err.message });
+    }
+  }
+
+  // SPY: buscar productos ganadores de Supabase para espiar
+  if (action === "spy-products" && req.method === "GET") {
+    try {
+      const { data } = await supabase
+        .from("winning_products")
+        .select("id,name,score,market,category")
+        .gte("score", 8)
+        .order("score", { ascending: false })
+        .limit(20);
+      return res.json({ ok: true, products: data || [] });
+    } catch (err) {
+      return res.json({ ok: true, products: [] });
     }
   }
 

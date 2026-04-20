@@ -28,6 +28,13 @@ export default function Dashboard() {
   const [regenerating, setRegenerating] = useState(null);
   const [autoCreating, setAutoCreating] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  // Spy
+  const [spyQuery, setSpyQuery] = useState("");
+  const [spyCountry, setSpyCountry] = useState("ALL");
+  const [spyResults, setSpyResults] = useState(null);
+  const [spyLoading, setSpyLoading] = useState(false);
+  const [spyProducts, setSpyProducts] = useState([]);
+  const [spyExpanded, setSpyExpanded] = useState(null);
 
   const C = [
     { c: "CR", f: "\u{1F1E8}\u{1F1F7}", n: "Costa Rica", cur: "CRC" },
@@ -165,6 +172,25 @@ export default function Dashboard() {
     } catch { show("Error", "err"); }
   }
 
+  async function runSpy(query) {
+    if (!query?.trim()) return show("Escribe el producto a espiar", "err");
+    setSpyLoading(true); setSpyResults(null);
+    try {
+      const r = await fetch("/api/landing?action=spy", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query, country: spyCountry }) });
+      const d = await r.json();
+      if (d.ok) { setSpyResults(d); show(`${d.results?.length || 0} competidores encontrados`); }
+      else show(d.error || "Error", "err");
+    } catch { show("Error de conexion", "err"); }
+    setSpyLoading(false);
+  }
+
+  async function loadSpyProducts() {
+    try {
+      const r = await fetch("/api/landing?action=spy-products").then(r => r.json());
+      if (r.ok) setSpyProducts(r.products || []);
+    } catch {}
+  }
+
   function cp(text, label) { navigator.clipboard.writeText(text).then(() => show(`${label} copiado`)).catch(() => show("Error", "err")); }
   function reset() { setUrl(""); setImgUrl(""); setImgName(""); setBulkUrls(""); setStep("idle"); setAnalyzed(null); setResult(null); setBulkResults(null); setElapsed(0); }
   function pl(r) { try { return JSON.parse(r.landing_data || "{}"); } catch { return {}; } }
@@ -293,6 +319,7 @@ export default function Dashboard() {
               { id: "create", label: "Crear Landing", emoji: "\u2726" },
               { id: "panel", label: "Panel", emoji: "\u25C6" },
               { id: "landings", label: "Mis Landings", emoji: "\u25C7" },
+              { id: "spy", label: "Spy Competencia", emoji: "\u25C9" },
               { id: "config", label: "Configuracion", emoji: "\u25CB" },
             ].map(n => (
               <button key={n.id} onClick={() => setTab(n.id)} className="nav-btn" style={{
@@ -762,6 +789,168 @@ export default function Dashboard() {
                     <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.15 }}>\u{1F3E0}</div>
                     <p style={{ color: "#475569", fontSize: 15, fontWeight: 600 }}>Sin landings</p>
                     <p style={{ color: "#334155", fontSize: 12, marginTop: 4 }}>Crea tu primera landing para verla aqui.</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* ═══ TAB: SPY COMPETENCIA ═══ */}
+            {tab === "spy" && (
+              <>
+                <div className="au" style={{ marginBottom: 24 }}>
+                  <h1 style={{ fontSize: 28, fontWeight: 900, color: "#F8FAFC", letterSpacing: "-.03em" }}>Spy Competencia</h1>
+                  <p style={{ color: "#475569", fontSize: 14, marginTop: 6 }}>Busca como otros venden el mismo producto — copies, precios, angulos, landings reales</p>
+                </div>
+
+                {/* Search bar */}
+                <div className="au au1 glass-card" style={{ padding: 24, marginBottom: 20 }}>
+                  <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+                    <input className="input" style={{ flex: 1, fontSize: 15 }} value={spyQuery} onChange={e => setSpyQuery(e.target.value)} placeholder="Nombre del producto a espiar... Ej: soporte magnetico celular" onKeyDown={e => e.key === "Enter" && runSpy(spyQuery)} />
+                    <select style={{ ...S.select, minWidth: 120 }} value={spyCountry} onChange={e => setSpyCountry(e.target.value)}>
+                      <option value="ALL">Todos</option>
+                      {C.slice(0, 12).map(c => <option key={c.c} value={c.c}>{c.f} {c.n}</option>)}
+                    </select>
+                    <button className="land-btn cta" onClick={() => runSpy(spyQuery)} disabled={spyLoading} style={{ padding: "12px 28px", opacity: spyLoading ? 0.5 : 1 }}>
+                      {spyLoading ? "Buscando..." : "Espiar"}
+                    </button>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#475569" }}>Busca en: Facebook Ads Library, Google Shopping, tiendas Shopify</div>
+                </div>
+
+                {/* Quick buttons from winning products */}
+                {spyProducts.length === 0 && <div style={{ display: "none" }}>{setTimeout(() => loadSpyProducts(), 0) && ""}</div>}
+                {spyProducts.length > 0 && (
+                  <div className="au au2" style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 12, color: "#64748B", fontWeight: 600, marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Productos ganadores (score 8+)</div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {spyProducts.slice(0, 10).map(p => (
+                        <button key={p.id} className="land-btn" onClick={() => { setSpyQuery(p.name); runSpy(p.name); }} style={{ fontSize: 12 }}>
+                          🔍 {p.name.substring(0, 35)}{p.name.length > 35 ? "..." : ""} <span style={{ color: "#10B981", marginLeft: 4 }}>{p.score}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Loading */}
+                {spyLoading && (
+                  <div className="au glass-card" style={{ padding: 48, textAlign: "center" }}>
+                    <div style={{ width: 48, height: 48, border: "3px solid #1E293B", borderTop: "3px solid #10B981", borderRadius: "50%", margin: "0 auto 16px", animation: "spin .8s linear infinite" }} />
+                    <p style={{ fontWeight: 700, fontSize: 16, color: "#F8FAFC" }}>Espiando competidores...</p>
+                    <p style={{ color: "#475569", fontSize: 13, marginTop: 4 }}>Facebook Ads Library + Google + Shopify stores</p>
+                  </div>
+                )}
+
+                {/* Results */}
+                {spyResults && !spyLoading && (
+                  <div className="au">
+                    {/* Summary */}
+                    <div className="glass-card" style={{ padding: 20, marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: "#F8FAFC" }}>{spyResults.results?.length || 0} competidores encontrados</span>
+                        <span style={{ fontSize: 12, color: "#475569", marginLeft: 12 }}>para &quot;{spyResults.query}&quot;</span>
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        {[
+                          ["FB Ads", spyResults.sources?.facebook || 0, "#3B82F6"],
+                          ["Google", spyResults.sources?.google || 0, "#10B981"],
+                          ["Shopify", spyResults.sources?.shopify || 0, "#A855F7"],
+                        ].map(([label, count, color]) => (
+                          <span key={label} style={{ fontSize: 11, color, background: `${color}15`, padding: "4px 10px", borderRadius: 8, fontWeight: 600, border: `1px solid ${color}25` }}>{label}: {count}</span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Competitor cards */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                      {(spyResults.results || []).map((r, i) => {
+                        const isExp = spyExpanded === i;
+                        const sourceColors = { facebook_ads: "#3B82F6", google: "#10B981", shopify_store: "#A855F7" };
+                        const sourceLabels = { facebook_ads: "Facebook Ads", google: "Google", shopify_store: "Shopify Store" };
+                        const accent = sourceColors[r.source] || "#64748B";
+                        return (
+                          <div key={i} className="land-card au" style={{ animationDelay: `${i * 0.05}s` }}>
+                            <div style={{ height: 3, background: `linear-gradient(90deg, ${accent}, ${accent}66, transparent 80%)` }} />
+                            <div style={{ padding: "18px 22px" }}>
+                              <div style={{ display: "flex", gap: 16 }}>
+                                {/* Image */}
+                                {(r.image || r.images?.[0]) && (
+                                  <img src={r.image || r.images[0]} alt="" style={{ width: 80, height: 80, borderRadius: 12, objectFit: "cover", border: "1px solid #1E293B", flexShrink: 0 }} onError={e => { e.target.style.display = "none"; }} />
+                                )}
+                                {/* Info */}
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                                    <span style={{ fontSize: 11, color: accent, background: `${accent}15`, padding: "3px 10px", borderRadius: 6, fontWeight: 700, border: `1px solid ${accent}25` }}>{sourceLabels[r.source] || r.source}</span>
+                                    {r.platform && <span style={{ fontSize: 11, color: "#64748B", background: "rgba(255,255,255,.04)", padding: "3px 8px", borderRadius: 6 }}>{r.platform}</span>}
+                                    {r.price && <span style={{ fontSize: 12, color: "#10B981", fontWeight: 700 }}>${r.price}</span>}
+                                  </div>
+                                  <h3 style={{ fontSize: 15, fontWeight: 700, color: "#F1F5F9", margin: "0 0 4px", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title || r.domain || new URL(r.url).hostname}</h3>
+                                  <div style={{ fontSize: 12, color: "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.description?.substring(0, 120) || r.url}</div>
+                                  {r.adText && <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 6, fontStyle: "italic", lineHeight: 1.5 }}>&quot;{r.adText.substring(0, 150)}{r.adText.length > 150 ? "..." : ""}&quot;</div>}
+                                </div>
+                              </div>
+
+                              {/* Actions */}
+                              <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                                <a href={r.url} target="_blank" rel="noopener noreferrer" className="land-btn blue" style={{ textDecoration: "none" }}>Visitar landing</a>
+                                <button className="land-btn" onClick={() => setSpyExpanded(isExp ? null : i)}>{isExp ? "Cerrar" : "Ver detalles"}</button>
+                                <button className="land-btn green" onClick={() => { setUrl(r.url); setTab("create"); setMode("url"); show("URL copiada al creador"); }}>Crear mi version</button>
+                                {r.adText && <button className="land-btn" onClick={() => cp(r.adText, "Ad copy")}>Copiar ad copy</button>}
+                              </div>
+
+                              {/* Expanded details */}
+                              {isExp && (
+                                <div style={{ marginTop: 16, padding: 18, background: "rgba(15,23,42,.6)", borderRadius: 14, border: "1px solid #1E293B", animation: "fadeUp .3s ease" }}>
+                                  {/* Copy snippets */}
+                                  {r.copySnippets?.length > 0 && (
+                                    <div style={{ marginBottom: 14 }}>
+                                      <div style={{ fontSize: 11, color: "#64748B", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Copy de venta encontrado</div>
+                                      {r.copySnippets.map((s, j) => (
+                                        <div key={j} style={{ fontSize: 13, color: "#CBD5E1", lineHeight: 1.7, padding: "8px 12px", background: "rgba(16,185,129,.04)", borderRadius: 8, marginBottom: 6, borderLeft: "3px solid rgba(16,185,129,.3)", cursor: "pointer" }} onClick={() => cp(s, "Copy")}>
+                                          {s}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {/* Features */}
+                                  {r.features?.length > 0 && (
+                                    <div style={{ marginBottom: 14 }}>
+                                      <div style={{ fontSize: 11, color: "#64748B", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Beneficios / Features</div>
+                                      {r.features.slice(0, 6).map((f, j) => (
+                                        <div key={j} style={{ fontSize: 12, color: "#94A3B8", padding: "4px 0" }}>• {f}</div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {/* Images */}
+                                  {r.images?.length > 0 && (
+                                    <div>
+                                      <div style={{ fontSize: 11, color: "#64748B", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Imagenes ({r.images.length})</div>
+                                      <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
+                                        {r.images.slice(0, 6).map((img, j) => (
+                                          <img key={j} src={img} alt="" style={{ width: 80, height: 80, borderRadius: 10, objectFit: "cover", border: "1px solid #1E293B", flexShrink: 0 }} onError={e => { e.target.style.display = "none"; }} />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  {/* Full URL */}
+                                  <div style={{ marginTop: 12, fontSize: 11, color: "#475569", wordBreak: "break-all" }}>
+                                    URL: <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ color: "#60A5FA" }}>{r.url}</a>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {spyResults.results?.length === 0 && (
+                      <div className="glass-card" style={{ padding: 48, textAlign: "center" }}>
+                        <div style={{ fontSize: 32, marginBottom: 12, opacity: 0.3 }}>🔍</div>
+                        <p style={{ color: "#64748B", fontSize: 14 }}>No se encontraron competidores para &quot;{spyResults.query}&quot;</p>
+                        <p style={{ color: "#475569", fontSize: 12, marginTop: 4 }}>Intenta con otro nombre o palabras clave</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </>
