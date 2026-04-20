@@ -814,7 +814,7 @@ export default function Dashboard() {
                       {spyLoading ? "Buscando..." : "Espiar"}
                     </button>
                   </div>
-                  <div style={{ fontSize: 12, color: "#475569" }}>Busca en: Facebook Ads Library, Google Shopping, tiendas Shopify</div>
+                  <div style={{ fontSize: 12, color: "#475569" }}>Busca en: Facebook Ads Library, Google, Bing, tiendas Shopify</div>
                 </div>
 
                 {/* Quick buttons from winning products */}
@@ -854,6 +854,7 @@ export default function Dashboard() {
                         {[
                           ["FB Ads", spyResults.sources?.facebook || 0, "#3B82F6"],
                           ["Google", spyResults.sources?.google || 0, "#10B981"],
+                          ["Bing", spyResults.sources?.bing || 0, "#F59E0B"],
                           ["Shopify", spyResults.sources?.shopify || 0, "#A855F7"],
                         ].map(([label, count, color]) => (
                           <span key={label} style={{ fontSize: 11, color, background: `${color}15`, padding: "4px 10px", borderRadius: 8, fontWeight: 600, border: `1px solid ${color}25` }}>{label}: {count}</span>
@@ -865,8 +866,8 @@ export default function Dashboard() {
                     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                       {(spyResults.results || []).map((r, i) => {
                         const isExp = spyExpanded === i;
-                        const sourceColors = { facebook_ads: "#3B82F6", google: "#10B981", shopify_store: "#A855F7" };
-                        const sourceLabels = { facebook_ads: "Facebook Ads", google: "Google", shopify_store: "Shopify Store" };
+                        const sourceColors = { facebook_ads: "#3B82F6", google: "#10B981", bing: "#F59E0B", shopify_store: "#A855F7" };
+                        const sourceLabels = { facebook_ads: "Facebook Ads", google: "Google", bing: "Bing", shopify_store: "Shopify Store" };
                         const accent = sourceColors[r.source] || "#64748B";
                         return (
                           <div key={i} className="land-card au" style={{ animationDelay: `${i * 0.05}s` }}>
