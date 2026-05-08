@@ -688,7 +688,7 @@ export default function Dashboard() {
                   })}
                   {(!stats?.recent || stats.recent.length === 0) && (
                     <div style={{ textAlign: "center", padding: 48, position: "relative" }}>
-                      <div style={{ fontSize: 36, marginBottom: 12, opacity: 0.2 }}>\u{1F4CA}</div>
+                      <div style={{ fontSize: 36, marginBottom: 12, opacity: 0.2 }}>{"\uD83D\uDCCA"}</div>
                       <p style={{ color: "#475569", fontSize: 14, fontWeight: 600 }}>Sin landings aun</p>
                       <p style={{ color: "#334155", fontSize: 12, marginTop: 4 }}>Crea tu primera landing para ver estadisticas.</p>
                     </div>
@@ -737,8 +737,8 @@ export default function Dashboard() {
                         </div>
 
                         <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap", position: "relative" }}>
-                          <button onClick={() => setPreviewId(l.id)} className="land-btn">\u{1F441} Preview</button>
-                          {l.shopify_url && <a href={l.shopify_url} target="_blank" rel="noreferrer" className="land-btn blue" style={{ textDecoration: "none" }}>\u{1F6CD} Tienda</a>}
+                          <button onClick={() => setPreviewId(l.id)} className="land-btn">{"\uD83D\uDC41"} Preview</button>
+                          {l.shopify_url && <a href={l.shopify_url} target="_blank" rel="noreferrer" className="land-btn blue" style={{ textDecoration: "none" }}>{"\uD83D\uDECD"} Tienda</a>}
                           {l.shopify_product_id && <a href={`https://admin.shopify.com/store/${store}/products/${l.shopify_product_id}`} target="_blank" rel="noreferrer" className="land-btn" style={{ textDecoration: "none" }}>\u2699 Admin</a>}
                           <button onClick={() => setSelectedLanding(expanded ? null : l.id)} className="land-btn">{expanded ? "\u2715 Cerrar" : "\u25BC Detalle"}</button>
                           <button onClick={() => { setImproveId(l.id); setImproveFeedback(""); }} className="land-btn green">\u2728 Mejorar</button>
@@ -786,7 +786,7 @@ export default function Dashboard() {
                 })}
                 {landings.length === 0 && (
                   <div style={{ textAlign: "center", padding: 60 }}>
-                    <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.15 }}>\u{1F3E0}</div>
+                    <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.15 }}>{"\uD83C\uDFE0"}</div>
                     <p style={{ color: "#475569", fontSize: 15, fontWeight: 600 }}>Sin landings</p>
                     <p style={{ color: "#334155", fontSize: 12, marginTop: 4 }}>Crea tu primera landing para verla aqui.</p>
                   </div>
